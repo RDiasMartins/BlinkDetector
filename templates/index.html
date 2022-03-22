@@ -1,0 +1,291 @@
+<html lang = "pt-br">
+    <head>
+        <meta charset = "UTF-8"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <script src = "{{ url_for('static', filename = 'js/jquery-3.3.1.min.js') }}"></script>
+        <script src = "{{ url_for('static', filename = 'js/bootstrap.min.js') }}"></script>
+        <script src = "{{ url_for('static', filename = 'js/popper.min.js') }}"></script>
+
+        <link rel = "stylesheet" href= "{{ url_for('static', filename = 'css/bootstrap.min.css') }}"/>
+
+        <title>Navegação</title>
+
+        <script>
+            $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+
+
+            var variaveisPython;//Variaveis passadas pelo python
+            var slidesID = geraSlides();
+            var nivelSlide = 0;
+
+            function geraSlides(slidePai){
+                if(slidePai == null){
+                    $.ajax({type: "GET", data: {operacao: 'categorias'}, url: 'http://localhost:3000/', success: function(data){
+                        slidesID = [];
+                        var HTML = "<div class=\"carousel-item active\">" +
+                            "<img src = 'http://localhost:1000/static/images/categoria_"+data[0][0]+".png' class = 'imgCenter' width = '500px'/><br/>"+
+                                    "<div class = \"imgCarousel\">" +data[0][1]+ "</div>"+
+                                "</div>";
+                        slidesID.push(data[0][0]);
+                        for(i = 1; i < data.length; i++){
+                            slidesID.push(data[i][0]);
+
+                            HTML += "<div class=\"carousel-item\">" +
+                                "<img src = 'http://localhost:1000/static/images/categoria_"+data[i][0]+".png' class = 'imgCenter' width = '500px'/><br/>"+
+                                "<div class = \"imgCarousel\">" +data[i][1]+ "</div>"+
+                            "</div>";
+                        }
+
+                        $("#carouselInner").html(HTML);
+                    }});
+                }else{
+                    $.ajax({type: "GET", data: {operacao: 'objetos', categoria: slidePai}, url: 'http://localhost:3000/', success: function(data){
+                        slidesID = [];
+                        var HTML = "<div class=\"carousel-item active\">" +
+                            "<img src = 'http://localhost:1000/static/images/objeto_"+data[0][0]+".png' class = 'imgCenter' width = '500px'/><br/>"+
+                                    "<div class = \"imgCarousel\">" +data[0][1]+ "</div>"+
+                                "</div>";
+                        slidesID.push(data[0][0]);
+                        for(i = 1; i < data.length; i++){
+                            slidesID.push(data[i][0]);
+
+                            HTML += "<div class=\"carousel-item\">" +
+                                "<img src = 'http://localhost:1000/static/images/objeto_"+data[i][0]+".png' class = 'imgCenter' width = '500px'/><br/>"+
+                                "<div class = \"imgCarousel\">" +data[i][1]+ "</div>"+
+                            "</div>";
+                        }
+
+                        $("#carouselInner").html(HTML);
+                    }});
+                }
+            }
+
+            //Atualização da tela
+            function atualizaSlides(acao){
+                console.log(acao);
+                if(acao == "esquerda"){
+                    $('#carousel').carousel("prev");
+                }else if(acao == "direita"){
+                    $('#carousel').carousel("next");
+                }else if(acao == "confirmar"){
+                    console.log(slidesID[$('div.active').index()]);
+                    geraSlides(slidesID[$('div.active').index()]);
+
+                    nivelSlide = 1;
+                }else if(acao == "cancelar"){
+                    geraSlides(null)
+
+                    nivelSlide = 0;
+                }
+                variaveisPython["acaoDefinida"] = -1;
+            }
+
+            //Atualização das ações
+            function atualizaAcoes(){
+                var HTML = '<table class = "table">'+
+                    '<thead class = "thead-dark">'+
+                        '<tr>'+
+                            '<th scope = "col">Comando</th>'+
+                            '<th scope = "col">Ação</th>'+
+                        '</tr>'+
+                    '</thead>'+
+                    '<tbody';
+
+                if(nivelSlide == 0){
+                    HTML += '<tr>'+
+                            '<td>1</td>'+
+                            '<td>Ligar a TV</td>'+
+                        '</tr>'+
+                        '<tr>'+
+                            '<td>2</td>'+
+                            '<td>Luzes da sala</td>'+
+                        '</tr>'+
+                        '<tr>'+
+                            '<td>3</td>'+
+                            '<td>Confirmar</td>'+
+                        '</tr>';
+                }else if(nivelSlide == 1){
+                    HTML += '<tr>'+
+                            '<td>1</td>'+
+                            '<td>Ligar a TV</td>'+
+                        '</tr>'+
+                        '<tr>'+
+                            '<td>2</td>'+
+                            '<td>Luzes da sala</td>'+
+                        '</tr>'+
+                        '<tr>'+
+                            '<td>3</td>'+
+                            '<td>Confirmar</td>'+
+                        '</tr>'+
+                        '<tr>'+
+                            '<td>4</td>'+
+                            '<td>Cancelar</td>'+
+                        '</tr>';
+                }
+
+                HTML += '</tbody>'+
+                '</table>';
+
+                $("#listaDeAcoesPossiveis").html(HTML);
+            }
+
+            //Função de update
+            function update(){
+                $.getJSON('http://localhost:2000/variaveis', function(data){
+                    variaveisPython = data;
+                });
+
+                atualizaSlides(variaveisPython);//Atualização dos slides
+                atualizaAcoes();
+            }
+
+            $(document).ready(function(){
+                $('#carousel').carousel("pause");
+            });              
+        </script>
+        <style>
+            .navbar{
+                min-height: 7%;
+                margin-bottom: 3%;
+            }
+
+            .imgUser{
+                width: 100%;
+                max-height: auto;
+            }
+
+            .imgCarousel{
+                width: 100%;
+
+                text-align: center;
+                font-size: 50px;
+            }
+
+            .imgCenter{
+                display: block;
+                margin-left: auto;
+                margin-right: auto;
+                margin-top: 100px;
+                width: 50%;
+            }
+        </style>
+    </head>
+    <body onload = "setInterval('update()', 1000)" style = "height: 100%;">
+        <!--Cabeçalho-->
+        <nav class = "navbar navbar-dark bg-dark">
+            <div class = "container">
+                <a class = "navbar-brand" href = "/">Blink Detection</a>
+
+                <button class = "navbar-toggler" type = "button" data-toggle = "collapse" data-target = "#navbarNavDropdown" aria-controls = "navbarNavDropdown" aria-expanded = "false" aria-label = "Toggle navigation">
+                    <span class = "navbar-toggler-icon"></span>
+                </button>
+
+                <div class = "collapse navbar-collapse" id = "navbarNavDropdown">
+                    <ul class = "navbar-nav">
+                        <li class = "nav-item active">
+                            <a class = "nav-link" href = "/visualizar">Visualizar<span class = "sr-only">(current)</span></a>
+                        </li>
+                        <li class = "nav-item">
+                            <a class = "nav-link" href = "/cadastrar">Cadastrar</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class = "container" style = "height: 100%;">
+
+            <div class = "row" style = "height: 100%;">
+                <div class = "col-4" style = "height: 90%;">
+
+                    <div class = "row" style = "height: 40%; margin-bottom: 6%">
+                        <video  class = "imgUser" autoplay="true" id="videoElement"></video>                               
+                    </div>
+
+                    <div class = "row" style = "height: 40%; border: 1px solid black" id = "listaDeAcoesPossiveis">
+                    </div>
+                </div>
+
+                <div class = "col-8" style = "height: 86%;">
+                    <div id = "carousel" class = "scarousel slide">
+                        <div id = "carouselInner" class="carousel-inner">
+                            <div class="carousel-item active">
+                                <div class = " align-middle imgCarousel">a</div>
+                            </div>
+                            <div class="carousel-item">
+                                <div class = "imgCarousel">b</div>
+                            </div>
+                            <div class="carousel-item">
+                                <div class = "imgCarousel">c</div>
+                            </div>
+                        </div>
+                        <a class="carousel-control-prev" href="#carouselExampleControls" role="button" data-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="sr-only">Previous</span>
+                        </a>
+                        <a class="carousel-control-next" href="#carouselExampleControls" role="button" data-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="sr-only">Next</span>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </body>
+</html>
+<script>
+    // Enviar os dados da imagem para o servidor 
+    var xhr = new XMLHttpRequest();
+
+    async function sendImage(image) {
+        const data = new FormData();
+        data.append("image", image);
+
+        xhr.open('POST', 'http://localhost:2000/video_feed', true);
+
+        xhr.send(data);
+    }
+
+    // Crie uma imagem base64 do stream
+    function createImage(stream){ 
+        stream.canvas.width = 640;
+        stream.canvas.height = 400;
+        
+        stream.ctx.drawImage(stream.video, 0, 0);
+
+        // Obtenha a string de imagem base64 do canvas e adicione-a a um campo de video 
+        return stream.canvas.toDataURL("image/png");
+    }
+
+    // Obtenha stream de vídeo e adicione-o a um vídeo na memória 
+    function createVideoStream() {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const canvas = document.createElement("canvas");
+                const video = document.getElementById("videoElement");
+                const ctx = canvas.getContext("2d");
+                video.onloadedmetadata = async () => {
+                    await video.play();
+                    resolve({ video, canvas, ctx });
+                };
+                video.srcObject = stream;
+            } catch (err) {
+                // Handle errors
+                reject(err);
+            }
+        });
+    }
+
+    async function process(stream) {
+        const image = await createImage(stream);
+        //console.log(image);
+        await sendImage(image);
+        setTimeout(() => process(stream), 500);
+    }
+
+    createVideoStream().then(process);
+</script>
